@@ -1,0 +1,9 @@
+trigger:
+- master
+
+stages:
+- template: template-content.yaml # Location relational to caller (here in same path)
+  parameters:
+    project: 'UsefulApp'
+    vmImage: 'windows-latest'
+    buildConfiguration: 'Release'

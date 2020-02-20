@@ -1,0 +1,63 @@
+# Release to a specific environment. Customize this by giving parameters
+
+parameters:
+  environment: '' # Name of the environment, used mainly for displaynames in release status view
+  azureSubscriptionName: '' # Name of the service connection in Azure DevOps
+  resourceGroupName: '' # Where main resources of the app will be deployed to
+  location: 'West Europe' # Which Azure Datacenter resources (resource groups) will be deployed to
+  armStorageResourceGroupName: '' # Where linked template storage is / will be deployed to
+  armStorageAccountName: '' # Name of the storage account where the arm templates will be stored
+  projectName: '' # Names of build artifacts and parameter files etc. derived from this. Example "Yaml_Control"
+  dependsOn: ''
+
+stages:
+- stage: 'release_${{ parameters.environment }}'
+  displayName: 'release ${{ parameters.environment }}'
+  ## Add variable group (here for example group Development_variables if env is Development), point to secrets in it with their key eg. $(secretName)
+  variables:
+    - group: '${{ parameters.environment}}_variables'
+    - name: examplevar  ## Needs to use this syntax if variable groups are used. Normal "key: value" will not work.
+      value: examplevalue
+
+  pool:
+    name: Azure Pipelines
+    vmImage: 'windows-2019'
+
+  jobs:
+  - deployment: 'deploy_arm'
+    displayName: 'Deploy ARM Templates'
+    dependsOn: [] # Runs always first
+    environment: ${{ parameters.environment }} # Creates an Environment in Azure DevOps with this name. You can use this to set manual approvals ("checks") there if needed.
+    strategy:
+      runOnce: # runOnce (general) / rolling (for VMs) / canary (kubernetes)
+        preDeploy: # preDeploy / deploy / routeTraffic / postRouteTraffic / on:failure / on:success
+          steps:
+            # Contents can also be taken in as parameters
+            - script: echo "Clean RG Deployment history"
+        deploy:
+          steps:
+            - script: echo "Deploy ARM"
+        on:
+          failure:
+            steps:
+              - script: echo "Rollback or retry?"
+
+  - deployment: 'deploy_backend'
+    displayName: 'Deploy Backend Code'
+    dependsOn: 'deploy_arm' # Resources need to be present before code can be deployed
+    environment: ${{ parameters.environment }} # Creates an Environment in Azure DevOps with this name. You can use this to set manual approvals ("checks") there if needed.
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo "Removed tasks"
+
+  - deployment: 'deploy_frontend'
+    displayName: 'Deploy Frontend Code'
+    dependsOn: 'deploy_arm' # Resources need to be present before code can be deployed
+    environment: ${{ parameters.environment }} # Creates an Environment in Azure DevOps with this name. You can use this to set manual approvals ("checks") there if needed.
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - script: echo "Removed tasks"

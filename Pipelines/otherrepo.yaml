@@ -1,0 +1,10 @@
+resources:
+  repositories:
+    - repository: templates # Identifier to refer to the repository in pipeline
+      type: git # git (azure repos) / github / bitbucket
+      name: Tooling/BuildTemplates # Projectname/Reponame, or just Reponame if in same project
+      ref: refs/heads/master # specify branch / tag to use, defaults to master
+
+jobs:
+- template: build/common.yml@templates  # Template reference -> Path in repo@repoid
+

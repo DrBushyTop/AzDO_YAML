@@ -1,0 +1,9 @@
+steps:
+- ${{ if eq(variables['catGif'], 'true') }}:
+  - task: PowerShell@2
+    displayName: 'Get your reward here!'
+    inputs:
+      targetType: 'inline'
+      script: |
+        Write-Output (Invoke-WebRequest -Uri "http://artii.herokuapp.com/make?text=enjoy+your+cat&font=broadway").Content
+        Write-Output "Click this link! https://cataas.com/cat/gif"

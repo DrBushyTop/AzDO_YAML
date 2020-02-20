@@ -1,0 +1,35 @@
+{
+  "id": "catgif-decorator",
+  "name": "CatGif Decorator",
+  "version": "0.0.5",
+  "publisher": "PasiHuuhkaZure",
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "manifestVersion": 1,
+  "contributions": [
+    {
+      "id": "get-me-a-catvideo",
+      "type": "ms.azure-pipelines.pipeline-decorator",
+      "targets": [
+        "ms.azure-pipelines-agent-job.post-job-tasks"
+      ],
+      "properties": {
+        "template": "decorator.yml"
+      }
+    }
+  ],
+  "description": "Decorator to provide links to cat GIFs",
+  "categories": [
+    "Azure Pipelines"
+  ],
+  "files": [
+    {
+      "path": "decorator.yml",
+      "addressable": true,
+      "contentType": "text/plain"
+    }
+  ]
+}

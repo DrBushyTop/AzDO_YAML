@@ -1,0 +1,16 @@
+variables:
+  # These are defaults for most runs
+  - name: project
+    value: UsefulApp
+  - name: vmImage
+    value: windows-latest
+  - name: buildConfiguration
+    value: Debug
+  - name: NotifyStakeholders
+    value: false
+    
+  - ${{ if startswith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
+    - name: buildConfiguration
+      value: Release
+    - name: NotifyStakeholders
+      value: true

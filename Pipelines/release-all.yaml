@@ -1,0 +1,58 @@
+# Release flow for two environments. Read through the comments
+
+# Disable triggering from code updates to repo
+trigger: none
+
+# Set up build pipeline to trigger release on completion
+resources:
+  pipelines:
+  - pipeline: build_all
+    source: yaml-build-all #Rename this to match your build pipeline name
+    trigger:
+      branches:
+      - release/*
+      - master
+
+# You can either set variables here, or use a variable group. See release-template variables for example.
+variables:
+  projectName: 'Yaml_Control' # Names of build artifacts derived from this. Example "Yaml_Control"
+  azureSubscriptionName: 'msdn-sub' # Name of the service connection in Azure DevOps
+  devResourceGroupName: 'ph-yaml-prod-rg' # Where main resources of the app will be deployed to
+  prodResourceGroupName: 'ph-yaml-prod-rg' # Where main resources of the app will be deployed to
+  location: 'West Europe' # Which Azure Datacenter resources (resource groups) will be deployed to
+  armStorageResourceGroupName: 'ph-yaml-template-rg' # Where linked template storage is / will be deployed to
+  armStorageAccountName: 'pharmtemplates' # Name of the storage account where the arm templates will be stored
+
+stages:
+- stage: 'download_artifacts' # Downloads all artifacts from the build pipeline to be used
+  pool:
+    name: Azure Pipelines
+    vmImage: windows-2019
+  jobs: 
+  - job: download_artifacts
+    steps:
+    - checkout: none # Don't check out any git repos
+    - download: build_all # Download all artifacts from the pipeline named "build_all" (NOTE: ALWAYS DOWNLOADS THE LATEST BUILD REGARDLESS OF BRANCH)
+
+- template: release-clipped.yaml # call release-clipped file, and give it parameters. You can use this to deploy to multiple envs by calling it multiple times.
+  parameters:
+    environment: "Development" # Name of the environment, used mainly for displaynames in release status view. This can be whatever, but the base example expects that ARM param files are named arm.{Environment}.params.json
+    azureSubscriptionName: $(azureSubscriptionName)
+    resourceGroupName: $(devResourceGroupName)
+    projectName: $(projectName)
+    location: $(location)
+    armStorageResourceGroupName: $(armStorageResourceGroupName)
+    armStorageAccountName: $(armStorageAccountName)
+    dependsOn: 'download_artifacts'
+
+# In a real world scenario you would of course give different params to dev & prod
+- template: release-clipped.yaml
+  parameters:
+    environment: "Production"
+    azureSubscriptionName: $(azureSubscriptionName)
+    resourceGroupName: $(prodResourceGroupName)
+    projectName: $(projectName)
+    location: $(location)
+    armStorageResourceGroupName: $(armStorageResourceGroupName)
+    armStorageAccountName: $(armStorageAccountName)
+    dependsOn: 'deploy_Development'

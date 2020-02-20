@@ -1,0 +1,32 @@
+parameters:
+  project: ''
+  vmImage: 'windows-latest' # Default value if not given in
+  buildConfiguration: ''
+
+stages:
+  - stage: 'dotnet_build'
+    displayName: 'Build ${{ parameters.project }}'
+    pool:
+      name: 'Azure Pipelines'
+      vmImage: ${{ parameters.vmImage }}
+    
+    jobs:
+    - job: 'dotnet_build'
+      steps:
+        - task: DotNetCoreCLI@2
+          displayName: 'dotnet restore'
+          inputs:
+            command: restore
+            projects: |
+              ${{ parameters.projectName }}.Api/${{ parameters.projectName }}.Api.csproj
+              ${{ parameters.projectName }}.Tests/${{ parameters.projectName }}.Tests.csproj
+        
+        - task: DotNetCoreCLI@2
+          displayName: 'dotnet build'
+          inputs:
+            projects: |
+              ${{ parameters.projectName }}.Api/${{ parameters.projectName }}.Api.csproj
+              ${{ parameters.projectName }}.Tests/${{ parameters.projectName }}.Tests.csproj
+            arguments: '--no-restore -c $(buildConfiguration)'
+
+#### Rest of the steps...

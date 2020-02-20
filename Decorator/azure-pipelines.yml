@@ -1,0 +1,15 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+- script: npm i
+- script: npm i -g tfx-cli
+- script: tfx extension create --manifest-globs vss-extension.json --rev-version --output-path "$(Pipeline.Workspace)/Decorator"
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Pipeline.Workspace)/Decorator'
+    artifact: 'decorator'
+    publishLocation: 'pipeline'

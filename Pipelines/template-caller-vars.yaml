@@ -1,0 +1,17 @@
+trigger:
+- master
+- release/*
+
+variables:
+- template: common-variables.yaml
+
+stages:
+- template: template-content.yaml
+  parameters:
+    project: ${{variables.project}}
+    vmImage: $(vmImage)
+    buildConfiguration: $(buildConfiguration)
+    
+- ${{ if eq(variables['NotifyStakeholders'], true) }}:
+  - stage: handle_emails
+
