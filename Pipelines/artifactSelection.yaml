@@ -1,0 +1,86 @@
+# Runtime parameters to select artifacts
+parameters:
+- name : artifactBranch
+  displayName: Artifact Branch (e.g. feature/myfeature)
+  type: string
+  default: $(Build.SourceBranch)
+- name : artifactBuildId
+  displayName: Artifact Build Id (e.g. run Id for the build to download). Overrides Artifact Branch if not "latest".
+  type: string
+  default: latest
+- name : artifact2Branch
+  displayName: Artifact 2 Branch (e.g. feature/myfeature)
+  type: string
+  default: $(Build.SourceBranch)
+- name : artifact2BuildId
+  displayName: Artifact 2 Build Id (e.g. run Id for the build to download). Overrides Artifact Branch if not "latest".
+  type: string
+  default: latest
+
+# Disable triggering from code updates to repo
+trigger: none
+
+# Set up build pipeline to trigger release on completion
+resources:
+  pipelines:
+  - pipeline: build_1
+    source: My-Build-YAML
+    trigger:
+      branches:
+      - release*
+      - master
+
+  - pipeline: build_2
+    source: PH-Test
+    trigger:
+      branches:
+      - master
+      - release*
+
+stages:
+- stage: 'download_artifacts' # Downloads all artifacts from the build pipeline to be used
+  pool:
+    name: Azure Pipelines
+    vmImage: windows-2019
+  jobs: 
+  - job: download_artifacts
+    steps:
+    - checkout: none
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Pipeline Artifacts
+      inputs:
+        buildType: 'specific'
+        project: '$(resources.pipeline.build_1.projectID)'
+        definition: '$(resources.pipeline.build_1.pipelineID)'
+        preferTriggeringPipeline: true
+        ${{ if eq(parameters.artifactBuildId, 'latest') }}:
+          buildVersionToDownload: 'latestFromBranch'
+        ${{ if ne(parameters.artifactBuildId, 'latest') }}:
+          buildVersionToDownload: 'specific'
+          runId: '${{ parameters.artifactBuildId }}'
+        ${{ if eq(parameters.artifactBranch, '$(Build.SourceBranch)') }}:
+          branchName: '$(Build.SourceBranch)'
+        ${{ if ne(parameters.artifactBranch, '$(Build.SourceBranch)') }}:
+          branchName: 'refs/heads/${{ parameters.artifactBranch }}'
+        targetPath: '$(Pipeline.Workspace)'
+
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Pipeline 2 artifacts
+      inputs:
+        buildType: 'specific'
+        project: '$(resources.pipeline.build_2.projectID)'
+        definition: '$(resources.pipeline.build_2.pipelineID)'
+        preferTriggeringPipeline: true
+        ${{ if eq(parameters.artifact2BuildId, 'latest') }}:
+          buildVersionToDownload: 'latestFromBranch'
+        ${{ if ne(parameters.artifact2BuildId, 'latest') }}:
+          buildVersionToDownload: 'specific'
+          runId: '${{ parameters.artifact2BuildId }}'
+        ${{ if eq(parameters.artifact2Branch, '$(Build.SourceBranch)') }}:
+          branchName: '$(Build.SourceBranch)'
+        ${{ if ne(parameters.artifact2Branch, '$(Build.SourceBranch)') }}:
+          branchName: 'refs/heads/${{ parameters.artifact2Branch }}'
+        targetPath: '$(Pipeline.Workspace)'
+        
+## Stage 2...n with your deployment logic
